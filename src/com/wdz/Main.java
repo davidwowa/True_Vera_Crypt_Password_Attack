@@ -10,9 +10,10 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
 
 import com.wdz.codelagoon.crypto.AES256;
 import com.wdz.codelagoon.crypto.BlockCipher;
@@ -24,7 +25,7 @@ import com.wdz.codelagoon.pbkdf.PKCS5.PBKDF2;
 
 public class Main {
 
-	static Logger logger = Logger.getLogger(Main.class);
+	static Logger logger = Logger.getLogger(Main.class.getName());
 
 	public static void main(String[] args) {
 
@@ -52,15 +53,13 @@ public class Main {
 
 		for (int i = 0; i < passwordsArray.length; i++) {
 			String password = passwordsArray[i];
-			if (logger.isDebugEnabled()) {
-				logger.debug(password);
-			}
+			//logger.log(Level.INFO, password);
 			if (password != null) {
 				// for TrueCrypt example ->
 				// hashFunction.recommededHMACIterations(false)
 				// 2000 for RIPEMD160
 				// for VeraCrypt example ->
-				// hashFunction.recommededHMACIterations(true)
+				// hashFunction.recommededHMACIterations(true);
 				// 500000 for SHA512
 				byte[] key = PBKDF2.deriveKey(hashFunction, password.getBytes(), salt,
 						hashFunction.recommededHMACIterations(true), bcipher1.keySize() + bcipher2.keySize());
@@ -71,16 +70,12 @@ public class Main {
 					XTS xts = new XTS(bcipher1, bcipher2);
 					xts.process(header, 64, 512 - 64, 0L, 0);
 
-					if (logger.isDebugEnabled()) {
-						String currentHeader = new String(header);
-						logger.debug("current header->" + currentHeader);
-					}
+					//String currentHeader = new String(header);
+					//logger.log(Level.FINE, "current header->" + currentHeader);
 
 					byte[] isTrue = getWord(header, 64, 67);
 					String word = new String(isTrue);
-					if (logger.isDebugEnabled()) {
-						logger.debug("word->" + word);
-					}
+					//logger.info("word->" + word);
 					if (word.contains("VERA")) {// for VeraCrypt Container
 						// if (word.contains("TRUE")) {// for TrueCrypt
 						// Container
@@ -91,7 +86,7 @@ public class Main {
 						// TODO decrypt partition
 					}
 				} catch (TCLibException e) {
-					logger.error("error on decryption", e);
+					logger.log(Level.FINE, "error on decryption");
 					e.printStackTrace();
 				}
 			}
@@ -107,7 +102,7 @@ public class Main {
 	static String[] getPasswordsList(String path) {
 		int numberOfPasswords = 0;
 		// TODO Bug No 1
-		// String charset = "ISO-8859-1";
+		//String charset = "ISO-8859-1";
 		String charset = "UTF-8";
 
 		try {
@@ -118,7 +113,8 @@ public class Main {
 			logger.info("passwords ammount " + numberOfPasswords);
 			lineNumberReader.close();
 		} catch (Throwable e) {
-			logger.error("error on reading line number on password file", e);
+			logger.log(Level.ALL, "error on reading line number on password file");
+			e.printStackTrace();
 		}
 
 		try (BufferedReader br = new BufferedReader(
@@ -133,7 +129,8 @@ public class Main {
 			}
 			return passwords;
 		} catch (Throwable e) {
-			logger.error("error on read password file ", e);
+			logger.log(Level.ALL, "error on read password file ");
+			e.printStackTrace();
 		}
 		return null;
 	}
