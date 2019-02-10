@@ -52,7 +52,6 @@ public class Main {
 		for (int i = 0; i < passwordsArray.length; i++) {
 			String password = passwordsArray[i];
 			if (password != null) {
-				
 				// for TrueCrypt example ->
 				// hashFunction.recommededHMACIterations(false)
 				// 2000 for RIPEMD160
