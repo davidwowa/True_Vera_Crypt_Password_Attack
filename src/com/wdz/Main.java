@@ -13,8 +13,6 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 import com.wdz.codelagoon.crypto.AES256;
 import com.wdz.codelagoon.crypto.BlockCipher;
 import com.wdz.codelagoon.crypto.TCLibException;
@@ -31,7 +29,7 @@ public class Main {
 
 		// logger.info("use RIPEMD160");
 		// start(new RIPEMD160());
-		logger.info("use SHA512");
+		// logger.info("use SHA512");
 		start(new SHA512());
 
 	}
@@ -40,11 +38,11 @@ public class Main {
 
 		BlockCipher bcipher1 = new AES256();
 		BlockCipher bcipher2 = new AES256();
-
+		
 		byte[] header = new byte[512];
 		byte[] salt = new byte[64];
 
-		String container = "resources/vera_cr";
+		String container = "resources/test_aes_sha512";
 		String passwords = "resources/passwords.txt";
 
 		header = getFirst512BytesFromContainer(container);
@@ -53,8 +51,8 @@ public class Main {
 
 		for (int i = 0; i < passwordsArray.length; i++) {
 			String password = passwordsArray[i];
-			//logger.log(Level.INFO, password);
 			if (password != null) {
+				
 				// for TrueCrypt example ->
 				// hashFunction.recommededHMACIterations(false)
 				// 2000 for RIPEMD160
@@ -63,26 +61,28 @@ public class Main {
 				// 500000 for SHA512
 				byte[] key = PBKDF2.deriveKey(hashFunction, password.getBytes(), salt,
 						hashFunction.recommededHMACIterations(true), bcipher1.keySize() + bcipher2.keySize());
-
+				
 				bcipher1.initialize(BlockCipher.Mode.DECRYPT, key, 0);
 				bcipher2.initialize(BlockCipher.Mode.ENCRYPT, key, bcipher2.keySize());
+				
 				try {
+					byte[] clone = header.clone();
+					
 					XTS xts = new XTS(bcipher1, bcipher2);
-					xts.process(header, 64, 512 - 64, 0L, 0);
+					xts.process(clone, 64, 512 - 64, 0L, 0);
 
 					//String currentHeader = new String(header);
 					//logger.log(Level.FINE, "current header->" + currentHeader);
 
-					byte[] isTrue = getWord(header, 64, 67);
+					byte[] isTrue = getWord(clone, 64, 67);
+					
+					// [86, 69, 82, 65]
 					String word = new String(isTrue);
-					//logger.info("word->" + word);
 					if (word.contains("VERA")) {// for VeraCrypt Container
 						// if (word.contains("TRUE")) {// for TrueCrypt
-						// Container
-						logger.info(word + " " + password + " " + ArrayUtils.toString(isTrue));
-						logger.info("header->" + new String(header));
-						logger.info("salt->" + new String(salt));
-
+						System.out.println(password);
+						System.out.println("OK");
+						
 						// TODO decrypt partition
 					}
 				} catch (TCLibException e) {
@@ -110,7 +110,7 @@ public class Main {
 					new InputStreamReader(new FileInputStream(path), Charset.forName(charset)));
 			lineNumberReader.skip(Long.MAX_VALUE);
 			numberOfPasswords = lineNumberReader.getLineNumber();
-			logger.info("passwords ammount " + numberOfPasswords);
+			//logger.info("passwords ammount " + numberOfPasswords);
 			lineNumberReader.close();
 		} catch (Throwable e) {
 			logger.log(Level.ALL, "error on reading line number on password file");
